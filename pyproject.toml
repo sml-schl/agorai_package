@@ -1,0 +1,86 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agorai"
+version = "0.1.0"
+description = "Democratic AI: Multi-agent opinion aggregation with fairness guarantees"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "Custom - Research and Non-Commercial License"}
+authors = [
+    {name = "Samuel Schlenker", email = "samuel.schlenker@example.com"}
+]
+keywords = ["ai", "machine-learning", "aggregation", "bias-mitigation", "multi-agent", "social-choice", "fairness"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: Other/Proprietary License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+dependencies = [
+    "numpy>=1.20.0",
+    "requests>=2.25.0",
+]
+
+[project.optional-dependencies]
+synthesis = [
+    "openai>=1.0.0",
+    "anthropic>=0.25.0",
+]
+bias = [
+    "scikit-learn>=1.0.0",
+    "pandas>=1.3.0",
+]
+all = [
+    "openai>=1.0.0",
+    "anthropic>=0.25.0",
+    "scikit-learn>=1.0.0",
+    "pandas>=1.3.0",
+]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=3.0.0",
+    "black>=22.0.0",
+    "flake8>=4.0.0",
+    "mypy>=0.950",
+]
+
+[project.urls]
+Homepage = "https://github.com/agorai/agorai"
+Documentation = "https://agorai.readthedocs.io"
+Repository = "https://github.com/agorai/agorai"
+"Bug Tracker" = "https://github.com/agorai/agorai/issues"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["agorai*"]
+
+[tool.black]
+line-length = 100
+target-version = ['py38', 'py39', 'py310', 'py311']
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
