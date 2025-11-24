@@ -14,6 +14,12 @@ src/agorai/aggregate/methods.py
 src/agorai/bias/__init__.py
 src/agorai/bias/contexts.py
 src/agorai/bias/core.py
+src/agorai/queue/__init__.py
+src/agorai/queue/core.py
+src/agorai/queue/metrics.py
 src/agorai/synthesis/__init__.py
 src/agorai/synthesis/core.py
 src/agorai/synthesis/providers.py
+src/agorai/visualization/__init__.py
+src/agorai/visualization/explanations.py
+src/agorai/visualization/plots.py
