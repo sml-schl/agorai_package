@@ -6,6 +6,8 @@ Provides the main `synthesize()` function and Agent/Council abstractions.
 from typing import List, Dict, Optional, Any, Union
 from abc import ABC, abstractmethod
 import re
+import time
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 
 from agorai.aggregate import aggregate as agg_aggregate
 from agorai.synthesis.validation import (
@@ -14,6 +16,12 @@ from agorai.synthesis.validation import (
     StructuredResponse,
     format_prompt_with_options
 )
+from agorai.synthesis.metrics import SynthesisMetrics
+from agorai.synthesis.circuit_breaker import CircuitBreaker, CircuitBreakerError
+from agorai.config import config
+from agorai.logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 class Agent:
@@ -52,8 +60,27 @@ class Agent:
         system_prompt: Optional[str] = None,
         temperature: float = 0.7,
         name: Optional[str] = None,
-        max_retries: int = 2,
+        max_retries: Optional[int] = None,
     ):
+        # Validate required parameters
+        if not provider or not isinstance(provider, str):
+            raise ValueError("provider must be a non-empty string")
+        if not model or not isinstance(model, str):
+            raise ValueError("model must be a non-empty string")
+
+        # Validate temperature bounds
+        if not config.MIN_TEMPERATURE <= temperature <= config.MAX_TEMPERATURE:
+            raise ValueError(
+                f"temperature must be between {config.MIN_TEMPERATURE} and {config.MAX_TEMPERATURE}, "
+                f"got {temperature}"
+            )
+
+        # Validate max_retries
+        if max_retries is None:
+            max_retries = config.MAX_RETRIES
+        if max_retries < 0:
+            raise ValueError(f"max_retries must be >= 0, got {max_retries}")
+
         self.provider = provider.lower()
         self.model = model
         self.api_key = api_key
@@ -62,6 +89,14 @@ class Agent:
         self.temperature = temperature
         self.name = name or f"{provider}:{model}"
         self.max_retries = max_retries
+
+        # Initialize circuit breaker for this agent
+        self._circuit_breaker = CircuitBreaker(name=self.name)
+
+        logger.info(
+            f"Agent initialized: {self.name} (provider={self.provider}, model={self.model}, "
+            f"temperature={self.temperature}, max_retries={self.max_retries})"
+        )
 
         # Import and instantiate provider
         from agorai.synthesis.providers import get_provider
@@ -92,12 +127,67 @@ class Agent:
                 'scores': Dict[str, float],  # Optional candidate scores
                 'metadata': Dict[str, Any]   # Provider metadata
             }
+
+        Raises
+        ------
+        ValueError
+            If prompt exceeds maximum length
+        TimeoutError
+            If generation times out
+        CircuitBreakerError
+            If circuit breaker is open
         """
+        # Validate prompt length
+        if len(prompt) > config.MAX_PROMPT_LENGTH:
+            logger.error(
+                f"Agent {self.name}: Prompt length {len(prompt)} exceeds maximum {config.MAX_PROMPT_LENGTH}"
+            )
+            raise ValueError(
+                f"Prompt length {len(prompt)} exceeds maximum {config.MAX_PROMPT_LENGTH} characters"
+            )
+
         full_prompt = prompt
         if self.system_prompt:
             full_prompt = f"{self.system_prompt}\n\n{prompt}"
+            # Re-validate after adding system prompt
+            if len(full_prompt) > config.MAX_PROMPT_LENGTH:
+                logger.error(
+                    f"Agent {self.name}: Full prompt length {len(full_prompt)} exceeds maximum {config.MAX_PROMPT_LENGTH}"
+                )
+                raise ValueError(
+                    f"Full prompt (including system prompt) length {len(full_prompt)} "
+                    f"exceeds maximum {config.MAX_PROMPT_LENGTH} characters"
+                )
 
-        return self._provider_instance.generate(full_prompt, **kwargs)
+        logger.debug(f"Agent {self.name}: Starting generation (prompt length: {len(full_prompt)})")
+
+        # Generate with timeout and circuit breaker
+        def _generate_with_timeout():
+            try:
+                return self._circuit_breaker.call(
+                    self._provider_instance.generate,
+                    full_prompt,
+                    **kwargs
+                )
+            except CircuitBreakerError:
+                logger.error(f"Agent {self.name}: Circuit breaker is open")
+                raise
+            except Exception as e:
+                logger.error(f"Agent {self.name}: Generation failed: {str(e)}")
+                raise
+
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(_generate_with_timeout)
+            try:
+                result = future.result(timeout=config.LLM_TIMEOUT)
+                logger.debug(f"Agent {self.name}: Generation successful")
+                return result
+            except FuturesTimeoutError:
+                logger.error(f"Agent {self.name}: Generation timed out after {config.LLM_TIMEOUT}s")
+                future.cancel()
+                raise TimeoutError(
+                    f"LLM generation timed out after {config.LLM_TIMEOUT} seconds"
+                )
 
     def generate_structured(
         self,
@@ -139,10 +229,23 @@ class Agent:
         Raises
         ------
         ValueError
-            If response validation fails after all retries
+            If response validation fails after all retries or if options are invalid
         """
-        if not options:
+        # Validate options
+        if not options or not isinstance(options, list):
             raise ValueError("options must be a non-empty list")
+        if len(options) < config.MIN_OPTIONS:
+            raise ValueError(f"At least {config.MIN_OPTIONS} options required, got {len(options)}")
+        if len(options) > config.MAX_OPTIONS:
+            raise ValueError(f"Maximum {config.MAX_OPTIONS} options allowed, got {len(options)}")
+        if len(set(options)) != len(options):
+            raise ValueError("Options must be unique")
+        if any(not opt or not opt.strip() for opt in options):
+            raise ValueError("Options cannot be empty or whitespace")
+
+        logger.info(
+            f"Agent {self.name}: Starting structured generation with {len(options)} options"
+        )
 
         # Format prompt with numbered options and format instructions
         formatted_prompt = format_prompt_with_options(question, options, context)
@@ -152,41 +255,63 @@ class Agent:
         last_validation = None
 
         for attempt in range(self.max_retries + 1):
-            # Generate response
-            if attempt == 0:
-                # First attempt with formatted prompt
-                result = self.generate(formatted_prompt, **kwargs)
-            else:
-                # Retry with correction prompt
-                retry_prompt = ResponseValidator.create_retry_prompt(
-                    original_prompt=formatted_prompt,
-                    invalid_response=last_validation.raw_text,
-                    error_message=last_validation.error_message,
-                    n_options=len(options)
+            logger.info(f"Agent {self.name}: Attempt {attempt + 1}/{self.max_retries + 1}")
+
+            try:
+                # Generate response
+                if attempt == 0:
+                    # First attempt with formatted prompt
+                    result = self.generate(formatted_prompt, **kwargs)
+                else:
+                    # Retry with correction prompt
+                    retry_prompt = ResponseValidator.create_retry_prompt(
+                        original_prompt=formatted_prompt,
+                        invalid_response=last_validation.raw_text,
+                        error_message=last_validation.error_message,
+                        n_options=len(options)
+                    )
+                    result = self.generate(retry_prompt, **kwargs)
+                    retries_used += 1
+
+                # Validate response
+                validation = ResponseValidator.validate_response(
+                    text=result['text'],
+                    n_options=len(options),
+                    strict=strict
                 )
-                result = self.generate(retry_prompt, **kwargs)
-                retries_used += 1
 
-            # Validate response
-            validation = ResponseValidator.validate_response(
-                text=result['text'],
-                n_options=len(options),
-                strict=strict
-            )
+                if validation.is_valid:
+                    # Success - return structured response
+                    logger.info(
+                        f"Agent {self.name}: Validation successful (option {validation.parsed_response['response']})"
+                    )
+                    return {
+                        'text': result['text'],
+                        'structured': validation.parsed_response,
+                        'validation': validation,
+                        'metadata': result.get('metadata', {}),
+                        'retries': retries_used
+                    }
+                else:
+                    logger.warning(
+                        f"Agent {self.name}: Validation failed - {validation.error_message}"
+                    )
 
-            if validation.is_valid:
-                # Success - return structured response
-                return {
-                    'text': result['text'],
-                    'structured': validation.parsed_response,
-                    'validation': validation,
-                    'metadata': result.get('metadata', {}),
-                    'retries': retries_used
-                }
+                last_validation = validation
 
-            last_validation = validation
+            except TimeoutError as e:
+                logger.error(f"Agent {self.name}: Timeout on attempt {attempt + 1}: {str(e)}")
+                if attempt == self.max_retries:
+                    raise
+                continue
+            except Exception as e:
+                logger.error(f"Agent {self.name}: Error on attempt {attempt + 1}: {str(e)}")
+                raise
 
         # All retries exhausted - raise error
+        logger.error(
+            f"Agent {self.name}: Failed after {self.max_retries} retries. Last error: {last_validation.error_message}"
+        )
         raise ValueError(
             f"Agent {self.name} failed to provide valid structured response after {self.max_retries} retries. "
             f"Last error: {last_validation.error_message}"
@@ -339,22 +464,37 @@ class Council:
                 'aggregation': Dict[str, Any],      # Aggregation details
                 'method': str,                      # Aggregation method used
                 'options': List[str],               # List of options
-                'total_retries': int                # Total retries across all agents
+                'total_retries': int,               # Total retries across all agents
+                'metrics': Dict[str, Any]           # Performance metrics
             }
 
         Raises
         ------
         ValueError
-            If any agent fails to provide valid structured response after retries
+            If any agent fails to provide valid structured response after retries,
+            or if all agents fail to generate responses
         """
         if not options:
             raise ValueError("options must be a non-empty list")
+
+        logger.info(
+            f"Council: Starting structured decision with {len(self.agents)} agents, "
+            f"{len(options)} options, method={self.aggregation_method}"
+        )
+
+        # Initialize metrics
+        metrics = SynthesisMetrics(
+            options_count=len(options),
+            method=self.aggregation_method
+        )
+        start_time = time.time()
 
         # Collect structured agent outputs
         agent_outputs = []
         total_retries = 0
 
         for agent in self.agents:
+            agent_start_time = time.time()
             try:
                 output = agent.generate_structured(
                     question=question,
@@ -363,6 +503,8 @@ class Council:
                     strict=strict,
                     **kwargs
                 )
+                agent_time = time.time() - agent_start_time
+
                 agent_outputs.append({
                     'agent': agent.name,
                     'text': output['text'],
@@ -373,10 +515,41 @@ class Council:
                     'retries': output['retries']
                 })
                 total_retries += output['retries']
+
+                # Track metrics
+                metrics.add_agent_time(agent.name, agent_time)
+                metrics.increment_retries(output['retries'])
+                if output['retries'] > 0:
+                    metrics.increment_validation_failures(output['retries'])
+
+                logger.info(
+                    f"Council: Agent {agent.name} chose option {output['structured']['response']} "
+                    f"(retries: {output['retries']}, time: {agent_time:.2f}s)"
+                )
+
+            except TimeoutError as e:
+                metrics.increment_timeouts()
+                metrics.add_error("timeout", str(e), agent.name)
+                logger.error(f"Council: Agent {agent.name} timed out: {str(e)}")
+                raise
             except ValueError as e:
+                metrics.add_error("validation", str(e), agent.name)
+                logger.error(f"Council: Agent {agent.name} validation failed: {str(e)}")
                 raise ValueError(
                     f"Agent {agent.name} failed to provide valid structured response: {str(e)}"
                 ) from e
+            except Exception as e:
+                metrics.add_error("generation", str(e), agent.name)
+                logger.error(f"Council: Agent {agent.name} error: {str(e)}")
+                raise
+
+        # Validate we have agent outputs
+        if not agent_outputs:
+            logger.error("Council: All agents failed to generate responses")
+            raise ValueError("All agents failed to generate responses")
+
+        logger.info(f"Council: Collected {len(agent_outputs)} agent responses, starting aggregation")
+        agg_start_time = time.time()
 
         # Build utility matrix from structured responses
         # Each agent gets utility 1.0 for chosen option, 0.0 for others
@@ -395,27 +568,43 @@ class Council:
             **self.aggregation_params
         )
 
-        winner_idx = agg_result['winner']
-        decision = options[winner_idx] if winner_idx is not None else None
+        metrics.aggregation_time = time.time() - agg_start_time
 
-        # Calculate confidence (normalized winning score)
+        winner_idx = agg_result['winner']
+
+        # Validate winner exists
+        if winner_idx is None or not (0 <= winner_idx < len(options)):
+            logger.error(f"Council: Invalid winner index: {winner_idx}")
+            raise ValueError("No valid candidates found in aggregation result")
+
+        decision = options[winner_idx]
+
+        # Calculate confidence (normalized winning score) with zero division protection
         scores = agg_result.get('scores', [])
-        if scores:
-            max_score = max(scores) if scores else 0
-            total_score = sum(scores) if scores else 1
+        if scores and len(scores) > 0:
+            max_score = max(scores)
+            total_score = sum(scores)
             confidence = max_score / total_score if total_score > 0 else 0.0
         else:
             confidence = 0.0
 
+        metrics.total_time = time.time() - start_time
+
+        logger.info(
+            f"Council: Decision complete - '{decision}' (confidence: {confidence:.2f}, "
+            f"total_time: {metrics.total_time:.2f}s, retries: {total_retries})"
+        )
+
         return {
             'decision': decision,
-            'decision_index': winner_idx + 1 if winner_idx is not None else None,  # 1-based
+            'decision_index': winner_idx + 1,  # 1-based
             'confidence': confidence,
             'agent_outputs': agent_outputs,
             'aggregation': agg_result,
             'method': self.aggregation_method,
             'options': options,
-            'total_retries': total_retries
+            'total_retries': total_retries,
+            'metrics': metrics.to_dict()
         }
 
     def _extract_candidates(self, agent_outputs: List[Dict[str, Any]]) -> List[str]:
@@ -441,8 +630,16 @@ class Council:
         Strategies:
         1. If agent provides explicit scores dict, use those
         2. Otherwise, use token overlap similarity between text and candidates
+
+        Performance optimization: Tokenize candidates once and reuse.
         """
         utilities = []
+
+        # Pre-tokenize candidates if caching is enabled (performance optimization #9)
+        if config.ENABLE_TOKEN_CACHE:
+            candidate_tokens = [set(re.findall(r'\b\w+\b', c.lower())) for c in candidates]
+        else:
+            candidate_tokens = None
 
         for output in agent_outputs:
             text = output['text'].lower()
@@ -452,13 +649,21 @@ class Council:
                 # Use explicit scores
                 u = [scores_dict.get(c, 0.0) for c in candidates]
             else:
-                # Use token overlap
+                # Use token overlap with caching optimization
                 text_tokens = set(re.findall(r'\b\w+\b', text))
                 u = []
-                for candidate in candidates:
-                    cand_tokens = set(re.findall(r'\b\w+\b', candidate.lower()))
-                    overlap = len(text_tokens & cand_tokens)
-                    u.append(float(overlap))
+
+                if candidate_tokens is not None:
+                    # Use cached tokenization
+                    for cand_tokens in candidate_tokens:
+                        overlap = len(text_tokens & cand_tokens)
+                        u.append(float(overlap))
+                else:
+                    # Tokenize on-the-fly (fallback)
+                    for candidate in candidates:
+                        cand_tokens = set(re.findall(r'\b\w+\b', candidate.lower()))
+                        overlap = len(text_tokens & cand_tokens)
+                        u.append(float(overlap))
 
             utilities.append(u)
 

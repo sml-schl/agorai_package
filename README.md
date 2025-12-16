@@ -22,6 +22,19 @@ AgorAI is a Python library for building fair, unbiased AI systems through democr
 - **Visualization** (`agorai.visualization`): Generate publication-quality plots and natural language explanations
 - **Property Verification** (`agorai.properties`): Coming soon - Formally verify axiom satisfaction
 
+### 🛡️ Production-Ready Robustness Features
+
+- **Timeout Handling**: Automatic timeout protection for LLM API calls (configurable, default 30s)
+- **Circuit Breaker**: Automatic protection against cascading failures from unresponsive APIs
+- **Comprehensive Logging**: Structured file-based logging with rotation (logs to `~/.agorai/logs/`)
+- **Metrics Collection**: Detailed performance metrics for every synthesis operation
+- **Input Validation**: Comprehensive validation of all inputs (temperature, options, prompt length, etc.)
+- **Transaction Safety**: Atomic operations with automatic rollback for benchmark creation
+- **Performance Optimization**: Tokenization caching for improved performance
+- **Zero Breaking Changes**: All features are backward compatible
+
+📚 **[Robustness Quick Start Guide](ROBUSTNESS_QUICK_START.md)** | **[Implementation Details](ROBUSTNESS_IMPLEMENTATION_SUMMARY.md)**
+
 ## 📦 Installation
 
 ### From PyPI (when published)

@@ -20,6 +20,20 @@ from agorai.synthesis.validation import (
     format_prompt_with_options
 )
 
+# Configuration and logging
+from agorai.config import config, Config
+from agorai.logging_config import setup_logging, get_logger
+
+# Metrics and monitoring
+from agorai.synthesis.metrics import SynthesisMetrics
+
+# Circuit breaker for resilience
+from agorai.synthesis.circuit_breaker import (
+    CircuitBreaker,
+    CircuitBreakerError,
+    CircuitState
+)
+
 # Optional research modules (imported on demand to avoid heavy dependencies)
 # Import queue: from agorai import queue
 # Import visualization: from agorai import visualization
@@ -38,6 +52,18 @@ __all__ = [
     "ValidationResult",
     "ResponseValidator",
     "format_prompt_with_options",
+    # Configuration
+    "config",
+    "Config",
+    # Logging
+    "setup_logging",
+    "get_logger",
+    # Metrics
+    "SynthesisMetrics",
+    # Circuit Breaker
+    "CircuitBreaker",
+    "CircuitBreakerError",
+    "CircuitState",
     # Version
     "__version__"
 ]
