@@ -9,11 +9,38 @@ __version__ = "0.2.0"
 # Core aggregation
 from agorai.aggregate import aggregate, list_methods
 
+# Synthesis and agent coordination
+from agorai.synthesis.core import Agent, Council, synthesize, synthesize_structured
+
+# Validation utilities
+from agorai.synthesis.validation import (
+    StructuredResponse,
+    ValidationResult,
+    ResponseValidator,
+    format_prompt_with_options
+)
+
 # Optional research modules (imported on demand to avoid heavy dependencies)
 # Import queue: from agorai import queue
 # Import visualization: from agorai import visualization
 
-__all__ = ["aggregate", "list_methods", "__version__"]
+__all__ = [
+    # Aggregation
+    "aggregate",
+    "list_methods",
+    # Synthesis
+    "Agent",
+    "Council",
+    "synthesize",
+    "synthesize_structured",
+    # Validation
+    "StructuredResponse",
+    "ValidationResult",
+    "ResponseValidator",
+    "format_prompt_with_options",
+    # Version
+    "__version__"
+]
 
 # Convenience: Check if research modules are available
 def has_queue():
