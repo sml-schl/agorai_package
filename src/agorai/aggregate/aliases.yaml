@@ -1,0 +1,109 @@
+# Aggregation Method Aliases
+# This file provides intuitive aliases for aggregation methods
+# Format: alias -> method_name
+#
+# Usage:
+#   from agorai.aggregate import get_method_from_alias
+#   method = get_method_from_alias("robust")  # Returns: "robust_median"
+#
+# Categories: fairness, robustness, efficiency, consensus, minority-protection
+
+# ============================================================================
+# ROBUSTNESS-FOCUSED ALIASES
+# ============================================================================
+robust: robust_median
+outlier-resistant: robust_median
+stable: robust_median
+
+# ============================================================================
+# MINORITY-PROTECTION ALIASES
+# ============================================================================
+minority-focused: maximin
+minority-protection: veto_hybrid
+protect-minorities: maximin
+veto-based: veto_hybrid
+worst-off-protection: maximin
+rawlsian: maximin
+
+# ============================================================================
+# FAIRNESS-FOCUSED ALIASES
+# ============================================================================
+egalitarian: atkinson
+equality-focused: atkinson
+fair: atkinson
+inequality-averse: atkinson
+
+# ============================================================================
+# CONSENSUS-FOCUSED ALIASES
+# ============================================================================
+consensus-seeking: consensus
+agreement-based: consensus
+low-disagreement: consensus
+collaborative: consensus
+
+# ============================================================================
+# EFFICIENCY-FOCUSED ALIASES
+# ============================================================================
+utilitarian: score_centroid
+efficient: score_centroid
+average-based: score_centroid
+utilitarian-average: score_centroid
+
+# ============================================================================
+# DEMOCRATIC VOTING ALIASES
+# ============================================================================
+democratic: majority
+simple-vote: majority
+one-person-one-vote: majority
+plurality: weighted_plurality
+weighted-vote: weighted_plurality
+
+# ============================================================================
+# INTENSITY-AWARE ALIASES
+# ============================================================================
+intensity-based: quadratic_voting
+preference-strength: quadratic_voting
+quadratic: quadratic_voting
+
+# ============================================================================
+# RANKING-BASED ALIASES
+# ============================================================================
+ranking-based: borda
+positional: borda
+borda-count: borda
+condorcet: schulze_condorcet
+pairwise-comparison: schulze_condorcet
+
+# ============================================================================
+# GAME-THEORETIC ALIASES
+# ============================================================================
+nash: nash_bargaining
+bargaining: nash_bargaining
+cooperative: nash_bargaining
+
+# ============================================================================
+# APPROVAL-BASED ALIASES
+# ============================================================================
+threshold-based: approval_voting
+approval: approval_voting
+binary-approval: approval_voting
+supermajority-required: supermajority
+
+# ============================================================================
+# COMPOSITE PROPERTIES
+# ============================================================================
+# These map to methods that combine multiple desirable properties
+
+robust-and-fair: atkinson  # Balances robustness with fairness
+democratic-with-protection: veto_hybrid  # Democracy with minority veto
+balanced: consensus  # Balances utility and agreement
+
+# ============================================================================
+# THEORETICAL FOUNDATION ALIASES
+# ============================================================================
+# Based on theoretical frameworks
+
+social-choice: majority  # Classical social choice theory
+welfare-economics: atkinson  # Welfare economics approach
+game-theory: nash_bargaining  # Game-theoretic approach
+statistics: robust_median  # Statistical approach

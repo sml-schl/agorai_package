@@ -11,6 +11,10 @@ from agorai.synthesis.providers import (
     AnthropicProvider,
     list_providers,
 )
+from agorai.synthesis.automatic_council import (
+    create_automatic_council,
+    create_automatic_council_simple,
+)
 
 __all__ = [
     "synthesize",
@@ -20,4 +24,6 @@ __all__ = [
     "OpenAIProvider",
     "AnthropicProvider",
     "list_providers",
+    "create_automatic_council",
+    "create_automatic_council_simple",
 ]

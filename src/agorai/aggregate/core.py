@@ -114,8 +114,9 @@ def aggregate(
         Utility matrix where utilities[i][j] is agent i's utility for candidate j.
         Can also be a 1D list for single agent case.
     method : str
-        Aggregation method name (default: "majority").
-        See `list_methods()` for available options.
+        Aggregation method name or alias (default: "majority").
+        See `list_methods()` for available methods.
+        Use `list_aliases()` for available aliases (e.g., "robust", "minority-focused").
     weights : Optional[List[float]]
         Per-agent weights for weighted aggregation (default: uniform).
     normalize : bool
@@ -149,6 +150,12 @@ def aggregate(
     - maximin: highest minimum utility across agents
     - etc.
 
+    **Aliases**: You can use intuitive aliases instead of method names:
+    - "robust" → robust_median
+    - "minority-focused" → maximin
+    - "fair" → atkinson
+    - etc. (see `list_aliases()` for complete list)
+
     Examples
     --------
     >>> # Simple majority voting
@@ -156,6 +163,11 @@ def aggregate(
     >>> result = aggregate(utilities, method="majority")
     >>> result['winner']
     0
+
+    >>> # Using alias
+    >>> result = aggregate(utilities, method="robust")
+    >>> result['method']
+    'robust_median'
 
     >>> # Atkinson with inequality aversion
     >>> utilities = [[0.8, 0.2], [0.3, 0.7], [0.5, 0.5]]
@@ -170,12 +182,22 @@ def aggregate(
     .. [3] Schulze, M. (2011). A new monotonic, clone-independent, reversal
            symmetric, and condorcet-consistent single-winner election method.
     """
+    # Try to resolve alias
+    original_method = method
+    try:
+        from agorai.aggregate.alias_loader import get_method_from_alias
+        method = get_method_from_alias(method)
+    except ImportError:
+        # Alias loader not available, use method as-is
+        pass
+
     if method not in AGGREGATOR_REGISTRY:
         available = ", ".join(sorted(AGGREGATOR_REGISTRY.keys()))
-        raise ValueError(
-            f"Unknown aggregation method '{method}'. "
-            f"Available methods: {available}"
-        )
+        error_msg = f"Unknown aggregation method '{original_method}'"
+        if original_method != method:
+            error_msg += f" (resolved to '{method}')"
+        error_msg += f". Available methods: {available}"
+        raise ValueError(error_msg)
 
     # Prepare utilities
     data = prepare_utilities(utilities, weights, normalize)

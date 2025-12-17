@@ -1,372 +1,218 @@
 # AgorAI Documentation
 
-Complete documentation for the AgorAI package.
+Complete documentation for the AgorAI framework - democratic multi-agent opinion aggregation.
 
-## Quick Links
+## 📚 Documentation Structure
 
-- [Installation Guide](#installation)
-- [Quick Start](#quick-start)
-- [API Reference](#api-reference)
-- [Guides](#guides)
-- [Examples](#examples)
+### 🎯 Getting Started
+- **[Main README](../README.md)** - Start here for overview and quick start
+- **[Examples](../examples/)** - Code examples and use cases
 
----
+### 🔧 Core Functionality
+- **[Aggregation Methods](core/aggregation.md)** - Complete reference for all 14+ aggregation mechanisms
+- **[Mechanism Aliases](core/aliases.md)** - Intuitive names for aggregation methods
+- **[Property Analysis](core/properties.md)** - Theoretical guarantees and mechanism selection
 
-## Installation
+### 🛡️ Applications
+- **[Bias Mitigation](applications/bias_mitigation.md)** - Multi-perspective bias detection and mitigation
+- **[Automatic Council Creation](applications/automatic_council.md)** - LLM-based perspective generation
+- **[Counterfactual Testing](applications/counterfactual_testing.md)** - Causal robustness evaluation
 
-### Basic Installation
+### 🚀 Advanced Topics
+- **[Queue Processing](advanced/queue_processing.md)** - Batch processing and production workflows
+- **[Visualization](advanced/visualization.md)** - Plots and explanations
+- **[Extending AgorAI](advanced/extending.md)** - Custom methods, providers, and integrations
 
-```bash
-pip install agorai
-```
-
-### With Research Features
-
-```bash
-pip install agorai[research]  # Queue processing + visualization
-```
-
-### Complete Installation
-
-```bash
-pip install agorai[all]  # All features
-```
-
-See [Configuration Guide](configuration.md) for detailed installation options.
+### 📖 Reference
+- **[API Reference](reference/api.md)** - Complete function signatures
+- **[Configuration](reference/configuration.md)** - Settings and environment variables
 
 ---
 
-## Quick Start
+## 🚀 Installation
 
-### 1. Pure Aggregation
+```bash
+pip install agorai[all]
+```
+
+See [Main README](../README.md#installation) for details.
+
+---
+
+## 🎓 Quick Start
+
+### Use Case 1: Aggregate Opinions from Multiple Agents
 
 ```python
 from agorai.aggregate import aggregate
 
-utilities = [[0.8, 0.2], [0.3, 0.7], [0.5, 0.5]]
-result = aggregate(utilities, method="atkinson", epsilon=1.0)
+utilities = [
+    [0.8, 0.2, 0.5],  # Agent 1's utilities
+    [0.3, 0.7, 0.4],  # Agent 2's utilities
+    [0.6, 0.5, 0.9],  # Agent 3's utilities
+]
+
+result = aggregate(utilities, method="fair")  # Uses Atkinson mechanism
 print(f"Winner: Candidate {result['winner']}")
 ```
 
-### 2. Queue Processing
+→ See [Aggregation Methods](core/aggregation.md) for all 14+ methods
+
+### Use Case 2: Mitigate Bias Through Multi-Perspective Analysis
 
 ```python
-from agorai.queue import process_queue
+from agorai.bias import mitigate_bias
 
-results = process_queue(
-    requests_file="production_data.json",
-    method="atkinson",
-    metrics=["fairness", "efficiency"],
-    epsilon=1.0
-)
-print(f"Processed {results['num_requests']} requests")
-```
-
-### 3. LLM Synthesis
-
-```python
-from agorai.synthesis import Agent, synthesize
-
-agents = [
-    Agent(provider="openai", model="gpt-4"),
-    Agent(provider="anthropic", model="claude-3-5-sonnet-20241022"),
-]
-
-result = synthesize(
-    prompt="Should we implement this feature?",
-    agents=agents,
-    aggregation_method="majority"
-)
-```
-
----
-
-## API Reference
-
-### Core Aggregation
-
-**[aggregate.md](aggregate.md)** - Complete aggregation API
-- `aggregate()` - Main aggregation function
-- `list_methods()` - List available methods
-- `register_method()` - Add custom methods
-- 14+ built-in aggregation methods
-
-### Queue Processing
-
-**[queue.md](queue.md)** - Batch processing from files
-- `load_requests_from_file()` - Load requests from JSON
-- `process_single_request()` - Process one request
-- `process_queue()` - Process multiple requests
-- `compare_methods_on_queue()` - Compare methods
-- Metrics calculation (fairness, efficiency, agreement)
-
-### Visualization
-
-**[visualization.md](visualization.md)** - Plots and explanations
-- `plot_utility_matrix()` - Heatmap visualization
-- `plot_aggregation_comparison()` - Method comparison
-- `plot_fairness_tradeoffs()` - Fairness vs efficiency
-- `explain_decision()` - Natural language explanations
-- `explain_method()` - Method documentation
-
----
-
-## Guides
-
-### User Guides
-
-1. **[Configuration Guide](configuration.md)** ⭐ NEW
-   - Installation options
-   - Environment variables
-   - LLM provider configuration
-   - Default settings
-   - Production setup
-
-2. **[Queue Processing Guide](queue.md)**
-   - File format specification
-   - Processing requests
-   - Comparing methods
-   - Use cases and examples
-
-3. **[Visualization Guide](visualization.md)**
-   - Creating plots
-   - Natural language explanations
-   - Customization
-   - Best practices
-
-### Developer Guides
-
-4. **[Extending Guide](extending.md)** ⭐ NEW
-   - Adding new aggregation methods
-   - Configuring LLM providers
-   - Creating custom metrics
-   - Extending the queue system
-   - Custom visualization
-   - Integration patterns (FastAPI, Django, Celery)
-
-5. **[Aggregation API](aggregate.md)**
-   - Method reference
-   - Parameters and return values
-   - Examples for each method
-
----
-
-## Guides by Topic
-
-### Getting Started
-- ✅ [README](../README.md) - Package overview
-- ✅ [Configuration](configuration.md) - Setup and configuration
-- ✅ [Quick Start Examples](../README.md#quick-start)
-
-### Core Features
-- ✅ [Aggregation Methods](aggregate.md) - All 14+ methods
-- ✅ [Queue Processing](queue.md) - Batch operations
-- ✅ [Visualization](visualization.md) - Plots and explanations
-
-### Advanced Topics
-- ✅ [Extending AgorAI](extending.md) - Customization
-- ✅ [Integration Patterns](extending.md#integration-patterns) - Web APIs, async
-- 📝 [Performance Optimization](performance.md) - Coming soon
-
-### Reference
-- ✅ [Aggregation API](aggregate.md) - Complete reference
-- ✅ [Queue API](queue.md) - Complete reference
-- ✅ [Visualization API](visualization.md) - Complete reference
-- ✅ [Metrics Reference](queue.md#metrics) - All metrics explained
-
----
-
-## Examples
-
-### Code Examples
-
-Located in `examples/` directory:
-
-1. **[production_requests.json](../examples/production_requests.json)**
-   - Example request file for queue processing
-   - Content moderation use case
-   - Shows file format and structure
-
-2. **Jupyter Notebooks** (in `notebooks/`)
-   - `agorai_demo.ipynb` - Interactive tutorial
-   - Covers all major features
-
-### Use Case Examples
-
-#### Production Batch Processing
-```python
-from agorai.queue import process_queue
-
-# Process daily content moderation decisions
-results = process_queue(
-    requests_file="daily_moderation.json",
-    method="atkinson",
-    metrics=["fairness", "efficiency"],
-    epsilon=1.0
+result = mitigate_bias(
+    input_text="Is this job posting discriminatory?",
+    aggregation_method="fair",
+    num_perspectives=5
 )
 
-for item in results['results']:
-    action = ["Approve", "Reject", "Escalate"][item['winner']]
-    print(f"{item['item_id']}: {action}")
+print(f"Decision: {result['decision']}")
+print(f"Confidence: {result['confidence']:.2%}")
 ```
 
-#### Method Comparison
-```python
-from agorai.queue import compare_methods_on_queue
-
-# Find best method for your use case
-comparison = compare_methods_on_queue(
-    requests_file="test_dataset.json",
-    methods=["majority", "atkinson", "maximin", "nash_bargaining"],
-    metrics=["fairness", "efficiency"]
-)
-
-print("Fairest method:", comparison['rankings']['fairness_gini_coefficient'][0])
-```
-
-#### Custom Aggregation Method
-```python
-from agorai.aggregate import register_method, aggregate
-import numpy as np
-
-def harmonic_mean(utilities, **params):
-    utils = np.array(utilities)
-    scores = []
-    for col in utils.T:
-        scores.append(len(col) / np.sum(1.0 / np.maximum(col, 0.1)))
-    return {'winner': int(np.argmax(scores)), 'scores': scores, 'method': 'harmonic'}
-
-register_method('harmonic', harmonic_mean)
-result = aggregate([[0.8, 0.2], [0.6, 0.4]], method='harmonic')
-```
+→ See [Bias Mitigation](applications/bias_mitigation.md) for complete guide
 
 ---
 
-## Documentation Structure
+## 🗺️ Quick Navigation by Use Case
+
+| I want to... | Go to... |
+|--------------|----------|
+| **Aggregate opinions from multiple agents** | [Aggregation Methods](core/aggregation.md) |
+| **Use intuitive method names like "fair" or "robust"** | [Mechanism Aliases](core/aliases.md) |
+| **Detect and mitigate AI bias** | [Bias Mitigation](applications/bias_mitigation.md) |
+| **Generate diverse perspectives automatically** | [Automatic Council Creation](applications/automatic_council.md) |
+| **Test for spurious correlations** | [Counterfactual Testing](applications/counterfactual_testing.md) |
+| **Choose the right aggregation method** | [Property Analysis](core/properties.md) |
+| **Process large batches of decisions** | [Queue Processing](advanced/queue_processing.md) |
+| **Visualize aggregation results** | [Visualization](advanced/visualization.md) |
+| **Add custom aggregation methods** | [Extending AgorAI](advanced/extending.md) |
+| **Configure LLM providers** | [Configuration](reference/configuration.md) |
+
+---
+
+## 👥 Quick Navigation by Role
+
+### For Researchers
+- [Aggregation Methods](core/aggregation.md) - Theory and implementation
+- [Property Analysis](core/properties.md) - Theoretical guarantees
+- [Counterfactual Testing](applications/counterfactual_testing.md) - Causal evaluation
+
+### For ML Engineers
+- [Bias Mitigation](applications/bias_mitigation.md) - Practical bias detection
+- [Queue Processing](advanced/queue_processing.md) - Production workflows
+- [API Reference](reference/api.md) - Complete function signatures
+
+### For Social Scientists
+- [Mechanism Aliases](core/aliases.md) - Accessible method selection
+- [Automatic Council Creation](applications/automatic_council.md) - Perspective modeling
+- [Visualization](advanced/visualization.md) - Result interpretation
+
+---
+
+## 📦 Core Modules
+
+### Aggregation
+The heart of AgorAI - multiple methods for combining agent utilities:
+- **Social Choice Theory**: Majority, Borda, Schulze, Approval
+- **Welfare Economics**: Maximin, Atkinson
+- **Machine Learning**: Score Centroid, Robust Median
+- **Game Theory**: Nash Bargaining, Quadratic Voting
+
+→ Complete reference: [Aggregation Methods](core/aggregation.md)
+
+### Aliases
+Intuitive method selection without deep theoretical knowledge:
+- `fair` → Atkinson (balances efficiency and equality)
+- `minority-focused` → Maximin (protects worst-off)
+- `robust` → Robust Median (outlier-resistant)
+- `democratic` → Majority (simple plurality)
+
+→ Complete guide: [Mechanism Aliases](core/aliases.md)
+
+### Bias Mitigation
+Multi-perspective analysis for bias detection:
+- Automatic cultural perspective generation
+- Multimodal support (text + image)
+- Fairness metrics (demographic parity, equalized odds)
+- Configurable aggregation strategies
+
+→ Complete guide: [Bias Mitigation](applications/bias_mitigation.md)
+
+### Counterfactual Testing
+Causal robustness evaluation:
+- Protected attribute manipulation
+- Spurious correlation detection
+- Edge case identification
+
+→ Complete guide: [Counterfactual Testing](applications/counterfactual_testing.md)
+
+---
+
+## 📁 Documentation Folder Structure
 
 ```
 docs/
-├── README.md                    # This file - documentation index
-├── configuration.md             # Setup and configuration ⭐ NEW
-├── extending.md                 # Developer guide for customization ⭐ NEW
-├── aggregate.md                 # Aggregation API reference
-├── queue.md                     # Queue processing guide
-└── visualization.md             # Visualization guide
+├── README.md                                    # This file
+├── core/
+│   ├── aggregation.md                           # Complete method reference
+│   ├── aliases.md                               # Intuitive method names
+│   └── properties.md                            # Theoretical guarantees
+├── applications/
+│   ├── bias_mitigation.md                       # Bias detection guide
+│   ├── automatic_council.md                     # Perspective generation
+│   └── counterfactual_testing.md                # Causal evaluation
+├── advanced/
+│   ├── queue_processing.md                      # Batch workflows
+│   ├── visualization.md                         # Plots and explanations
+│   └── extending.md                             # Custom methods
+└── reference/
+    ├── api.md                                   # Complete API
+    └── configuration.md                         # Settings
 ```
 
 ---
 
-## Aggregation Methods Reference
+## ❓ FAQ
 
-### Social Choice Methods
-- **majority** - Simple plurality voting
-- **weighted_plurality** - Weighted votes
-- **borda** - Borda count (ranking-based)
-- **schulze_condorcet** - Condorcet method
-- **approval_voting** - Approval-based
-- **supermajority** - Requires threshold
-- **quadratic_voting** - Quadratic weights
+**Q: How do I choose the right aggregation method?**
+A: Use [aliases](core/aliases.md) for intuitive selection, or consult [Property Analysis](core/properties.md) for theory-driven choice.
 
-### Welfare Economics Methods
-- **maximin** - Rawlsian (protect worst-off)
-- **atkinson** - Inequality-averse (parameterized)
-- **nash_bargaining** - Game-theoretic fair
+**Q: How do I detect bias in my AI system?**
+A: See the [Bias Mitigation guide](applications/bias_mitigation.md) for multi-perspective analysis.
 
-### Machine Learning Methods
-- **score_centroid** - Average scores
-- **robust_median** - Median-based
-- **consensus** - Agreement-maximizing
+**Q: How do I add custom aggregation methods?**
+A: See [Extending AgorAI](advanced/extending.md#custom-methods).
 
-### Hybrid Methods
-- **veto_hybrid** - Combines multiple methods
+**Q: How do I process large batches of decisions?**
+A: See [Queue Processing](advanced/queue_processing.md) for production workflows.
 
-See [Aggregation API](aggregate.md) for complete reference.
+**Q: How do I configure LLM providers?**
+A: See [Configuration](reference/configuration.md#llm-providers).
 
 ---
 
-## Metrics Reference
+## 🤝 Contributing
 
-### Fairness Metrics (lower is better)
-- **Gini coefficient** - Classic inequality measure (0-1)
-- **Atkinson index** - Parameterizable inequality (0-1)
-- **Variance** - Statistical spread
-- **Coefficient of variation** - Normalized variance
-
-### Efficiency Metrics (higher is better)
-- **Social welfare** - Sum of utilities
-- **Utilitarian welfare** - Mean utility
-- **Pareto efficiency** - No dominated alternatives (0 or 1)
-
-### Agreement Metrics (higher is better)
-- **Consensus score** - Fraction agreeing (0-1)
-- **Average support** - Mean utility for winner (0-1)
-- **Minimum support** - Worst-case utility (0-1)
-
-See [Queue Guide - Metrics](queue.md#metrics) for details.
+Contributions welcome! See [CONTRIBUTING.md](../CONTRIBUTING.md) for guidelines.
 
 ---
 
-## FAQ
+## 📞 Support
 
-### How do I add a custom aggregation method?
-
-See [Extending Guide - Adding Methods](extending.md#adding-new-aggregation-methods)
-
-### How do I change the default LLM provider?
-
-See [Configuration Guide - LLM Providers](configuration.md#llm-provider-configuration)
-
-### How do I process production data in batches?
-
-See [Queue Processing Guide](queue.md)
-
-### How do I create custom visualizations?
-
-See [Extending Guide - Custom Visualization](extending.md#custom-visualization)
-
-### How do I integrate with FastAPI/Django?
-
-See [Extending Guide - Integration Patterns](extending.md#integration-patterns)
+- **GitHub Issues**: Report bugs and request features
+- **Email**: Contact for research collaboration
 
 ---
 
-## Contributing
+## 📜 License
 
-See [CONTRIBUTING.md](../CONTRIBUTING.md) for:
-- Code style guidelines
-- Testing requirements
-- Pull request process
-- Development setup
+Custom Research and Non-Commercial License - Free for academic research, education, and personal use.
 
----
-
-## Support
-
-- **Issues**: [GitHub Issues](https://github.com/yourusername/agorai/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/agorai/discussions)
-- **Email**: samuel.schlenker@example.com
-
----
-
-## Version History
-
-- **v0.2.0** (2025-11-24): Queue processing + visualization modules
-- **v0.1.0** (2024-11-20): Initial release
-
-See [CHANGELOG.md](../CHANGELOG.md) for complete history.
-
----
-
-## License
-
-Custom Research and Non-Commercial License
-
-Free for:
-- Academic research
-- Education
-- Personal use
-
-Commercial use requires agreement. See [LICENSE](../LICENSE) for details.
+See [LICENSE](../LICENSE) for details.
 
 ---
 

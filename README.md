@@ -1,273 +1,150 @@
 # AgorAI: Democratic AI Through Multi-Agent Aggregation
 
-[![PyPI version](https://badge.fury.io/py/agorai.svg)](https://badge.fury.io/py/agorai)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![License: Custom](https://img.shields.io/badge/License-Research-green.svg)](LICENSE)
+[![License: Research](https://img.shields.io/badge/License-Research-green.svg)](LICENSE)
 
 AgorAI is a Python library for building fair, unbiased AI systems through democratic multi-agent opinion aggregation. It combines social choice theory, welfare economics, and modern LLMs to enable collective decision-making with provable fairness guarantees.
 
-**Perfect for:** AI researchers, ML engineers, social scientists, and anyone building fair multi-agent systems.
+## 🎯 What is AgorAI?
 
-## ✨ Features
+AgorAI addresses a fundamental challenge in AI: **How do we make fair decisions when different perspectives disagree?**
 
-### Core Modules
+Instead of relying on a single AI model's judgment, AgorAI:
+1. Gathers opinions from multiple diverse agents (different models, cultural perspectives, or stakeholders)
+2. Aggregates these opinions using mathematically rigorous methods from social choice theory
+3. Produces decisions with provable fairness guarantees
 
-- **Pure Mathematical Aggregation** (`agorai.aggregate`): 14+ aggregation methods from social choice theory, welfare economics, and game theory
-- **LLM-Based Synthesis** (`agorai.synthesis`): Multi-provider LLM integration (OpenAI, Anthropic, Ollama, Google) with unified opinion synthesis
-- **Bias Mitigation** (`agorai.bias`): Full pipeline for detecting and mitigating AI bias through cultural perspective diversity
-
-### 🆕 Research Modules (v0.2.0)
-
-- **Queue Processing** (`agorai.queue`): Process multiple aggregation requests from files (production data, test datasets, benchmarks)
-- **Visualization** (`agorai.visualization`): Generate publication-quality plots and natural language explanations
-- **Property Verification** (`agorai.properties`): Coming soon - Formally verify axiom satisfaction
-
-### 🛡️ Production-Ready Robustness Features
-
-- **Timeout Handling**: Automatic timeout protection for LLM API calls (configurable, default 30s)
-- **Circuit Breaker**: Automatic protection against cascading failures from unresponsive APIs
-- **Comprehensive Logging**: Structured file-based logging with rotation (logs to `~/.agorai/logs/`)
-- **Metrics Collection**: Detailed performance metrics for every synthesis operation
-- **Input Validation**: Comprehensive validation of all inputs (temperature, options, prompt length, etc.)
-- **Transaction Safety**: Atomic operations with automatic rollback for benchmark creation
-- **Performance Optimization**: Tokenization caching for improved performance
-- **Zero Breaking Changes**: All features are backward compatible
-
-📚 **[Robustness Quick Start Guide](ROBUSTNESS_QUICK_START.md)** | **[Implementation Details](ROBUSTNESS_IMPLEMENTATION_SUMMARY.md)**
+**Perfect for:** AI researchers, ML engineers, and social scientists building fair multi-agent systems.
 
 ## 📦 Installation
 
-### From PyPI (when published)
-
 ```bash
-# Minimal installation (aggregation only)
-pip install agorai
-
-# With LLM synthesis support
-pip install 'agorai[synthesis]'
-
-# With bias mitigation support
-pip install 'agorai[bias]'
-
-# Full installation (all features)
-pip install 'agorai[all]'
+pip install agorai[all]
 ```
 
-**Note for zsh users:** Always quote the brackets to prevent shell globbing: `'agorai[all]'`
+**API Keys (Optional):**
+- For LLM synthesis: `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, or configure Ollama locally
+- For counterfactual testing: `OPENAI_API_KEY` or `REPLICATE_API_TOKEN`
 
-### Local Development
+## 🚀 Quick Start
 
-```bash
-# Clone and install in editable mode
-cd path/to/agorai-package
+### Use Case 1: Aggregate Opinions from Multiple Agents
 
-# Minimal installation
-pip install -e .
-
-# With optional dependencies
-pip install -e '.[synthesis]'
-pip install -e '.[bias]'
-pip install -e '.[all]'
-
-# For development
-pip install -e '.[dev]'
-```
-
-## Quick Start
-
-### 1. Pure Mathematical Aggregation
+The most common use case - combine utilities/opinions from multiple agents:
 
 ```python
 from agorai.aggregate import aggregate
 
-# Aggregate utilities from multiple agents
+# Three agents provide utilities for three candidates
 utilities = [
-    [0.8, 0.2, 0.5],  # Agent 1's utilities for 3 candidates
+    [0.8, 0.2, 0.5],  # Agent 1's utilities
     [0.3, 0.7, 0.4],  # Agent 2's utilities
     [0.6, 0.5, 0.9],  # Agent 3's utilities
 ]
 
-result = aggregate(utilities, method="atkinson", epsilon=1.0)
-print(result)
-# {'winner': 2, 'scores': [0.54, 0.42, 0.58], 'method': 'atkinson'}
+# Use "fair" aggregation (Atkinson method)
+result = aggregate(utilities, method="fair")
+print(f"Winner: Candidate {result['winner']}")
+print(f"Scores: {result['scores']}")
 ```
 
-### 2. LLM-Based Opinion Synthesis
-
+**Try different methods:**
 ```python
-from agorai.synthesis import synthesize, Agent
+# Protect minorities
+result = aggregate(utilities, method="minority-focused")  # Maximin
 
-# Create diverse agents
-agents = [
-    Agent(provider="openai", model="gpt-4", api_key="sk-..."),
-    Agent(provider="anthropic", model="claude-3-5-sonnet-20241022", api_key="sk-ant-..."),
-    Agent(provider="ollama", model="llama3.2"),
-]
+# Resist outliers
+result = aggregate(utilities, method="robust")  # Robust Median
 
-# Synthesize opinions
-result = synthesize(
-    prompt="Should we approve this marketing campaign?",
-    agents=agents,
-    aggregation_method="majority"
-)
+# Democratic voting
+result = aggregate(utilities, method="democratic")  # Majority
 
-print(result['decision'])  # The aggregated decision
-print(result['confidence'])  # Confidence score
+# Or use technical names
+result = aggregate(utilities, method="schulze_condorcet")
 ```
 
-### 3. Bias Mitigation
+**See all options:** [Aggregation Methods Documentation](docs/core/aggregation.md)
+
+---
+
+### Use Case 2: Mitigate Bias Through Multi-Perspective Analysis
+
+Detect and mitigate bias by synthesizing diverse cultural perspectives:
 
 ```python
-from agorai.bias import mitigate_bias, BiasConfig
+from agorai.bias import mitigate_bias
 
-# Configure bias mitigation
-config = BiasConfig(
-    context="hate_speech_detection",
-    providers=["openai", "anthropic"],
-    aggregation_method="schulze_condorcet",
-    cultural_perspectives=5
-)
-
-# Mitigate bias in content moderation
+# Analyze content from multiple cultural perspectives
 result = mitigate_bias(
-    input_text="Is this content appropriate?",
-    config=config
+    input_text="Is this job posting discriminatory?",
+    input_image=None,  # Optional: for multimodal analysis
+    aggregation_method="fair",
+    num_perspectives=5  # Generate 5 diverse cultural perspectives
 )
 
-print(result['decision'])  # Bias-mitigated decision
-print(result['fairness_metrics'])  # Fairness analysis
+print(f"Decision: {result['decision']}")
+print(f"Confidence: {result['confidence']:.2%}")
+print(f"Fairness metrics: {result['fairness_metrics']}")
 ```
 
-### 4. 🆕 Queue Processing (Batch Operations)
+**See full guide:** [Bias Mitigation Documentation](docs/applications/bias_mitigation.md)
 
-```python
-from agorai.queue import process_queue, compare_methods_on_queue
-
-# Process multiple requests from a file (production data, test datasets, etc.)
-results = process_queue(
-    requests_file="production_batch.json",
-    method="atkinson",
-    metrics=["fairness", "efficiency", "agreement"],
-    epsilon=1.0
-)
-
-print(f"Processed: {results['num_requests']} requests")
-print(f"Gini Coefficient: {results['summary']['fairness']['gini_coefficient']:.3f}")
-print(f"Social Welfare: {results['summary']['efficiency']['social_welfare']:.2f}")
-
-# Compare multiple methods on same queue
-comparison = compare_methods_on_queue(
-    requests_file="daily_decisions.json",
-    methods=["majority", "atkinson", "maximin"],
-    metrics=["fairness", "efficiency"]
-)
-
-print("Fairness Rankings:", comparison['rankings']['fairness_gini_coefficient'])
-```
-
-### 5. 🆕 Visualization & Explanations
-
-```python
-from agorai.visualization import plot_utility_matrix, explain_decision
-from agorai.aggregate import aggregate
-
-utilities = [[0.8, 0.2], [0.3, 0.7], [0.5, 0.5]]
-
-# Plot utility matrix
-plot_utility_matrix(
-    utilities,
-    agent_labels=["Agent 1", "Agent 2", "Agent 3"],
-    candidate_labels=["Option A", "Option B"],
-    save_path="utilities.png"
-)
-
-# Get natural language explanation
-result = aggregate(utilities, method="atkinson", epsilon=1.0)
-explanation = explain_decision(
-    utilities, "atkinson", result['winner'], result['scores'], epsilon=1.0
-)
-print(explanation)
-# Output: "Candidate 0 won using Atkinson aggregation with ε=1.0 (geometric mean).
-# How it works: Atkinson method computes the equally-distributed equivalent..."
-```
-
-## 📊 Available Aggregation Methods
-
-### Social Choice Theory
-- `majority` - One-agent-one-vote plurality
-- `weighted_plurality` - Weighted voting
-- `borda` - Borda count positional ranking
-- `schulze_condorcet` - Condorcet-consistent ranking
-- `approval_voting` - Multi-approval voting
-- `supermajority` - Threshold-based consensus
-
-### Welfare Economics
-- `maximin` - Rawlsian fairness (maximize minimum utility)
-- `atkinson` - Parameterizable inequality aversion
-
-### Machine Learning
-- `score_centroid` - Weighted average
-- `robust_median` - Outlier-resistant median
-- `consensus` - Agreement-focused aggregation
-
-### Game Theory
-- `quadratic_voting` - Intensity-aware voting with budget constraints
-- `nash_bargaining` - Cooperative bargaining solution
-- `veto_hybrid` - Minority protection via veto power
-
-## 🎯 Use Cases
-
-### For AI Researchers
-- 🔬 **Benchmark aggregation methods** with scientific metrics (fairness, efficiency, agreement)
-- 🧪 **Experiment with multi-agent architectures** (MARL, Constitutional AI, test-time compute)
-- 📊 **Generate publication-quality figures** for papers
-- ✅ **Compare fairness properties** with formal axiom verification (coming soon)
-
-### For ML Engineers
-- 🛡️ **Build bias-resistant systems** with cultural perspective diversity
-- ⚖️ **Aggregate ensemble predictions** with provable fairness guarantees
-- 🤝 **Implement human-in-the-loop AI** with democratic decision-making
-- 📈 **Monitor fairness metrics** in production (Gini, Atkinson, etc.)
-
-### For Social Scientists
-- 🔍 **Study collective decision-making** in AI systems
-- 🌍 **Analyze cultural bias** in language models
-- 📐 **Evaluate algorithmic fairness** with rigorous metrics
-- 🧮 **Bridge social choice theory** and modern AI
+---
 
 ## 📚 Documentation
 
-### Getting Started
-- **[Documentation Index](docs/README.md)** - Complete documentation overview
-- **[Configuration Guide](docs/configuration.md)** - Installation and setup
-- **[Examples](examples/)** - Code examples and sample data
-- **[Jupyter Notebooks](notebooks/)** - Interactive tutorials
+### Core Functionality
+- **[Aggregation Methods](docs/core/aggregation.md)** - All 14+ methods with parameters and examples
+- **[Mechanism Aliases](docs/core/aliases.md)** - Intuitive names for aggregation methods
+- **[Property Analysis](docs/core/properties.md)** - Select mechanisms based on theoretical properties
 
-### User Guides
-- **[Aggregation API](docs/aggregate.md)** - All 14+ aggregation methods
-- **[Queue Processing](docs/queue.md)** - Batch processing from files
-- **[Visualization](docs/visualization.md)** - Plots and natural language explanations
+### Applications
+- **[Bias Mitigation](docs/applications/bias_mitigation.md)** - Detect and mitigate AI bias
+- **[Council Creation](docs/applications/automatic_council.md)** - Auto-generate diverse perspectives
+- **[Counterfactual Testing](docs/applications/counterfactual_testing.md)** - Causal robustness evaluation
 
-### Developer Guides
-- **[Extending AgorAI](docs/extending.md)** - Add custom methods, configure LLMs, integrate with your stack
-- **[Configuration](docs/configuration.md)** - Environment setup, API keys, production config
-- **[Backend Compatibility](BACKEND_COMPATIBILITY.md)** - Migration guide
+### Advanced Topics
+- **[Queue Processing](docs/advanced/queue_processing.md)** - Batch operations and benchmarking
+- **[Visualization](docs/advanced/visualization.md)** - Plots and explanations
+- **[Custom Extensions](docs/advanced/extending.md)** - Add your own methods
 
-## 🔬 Research & Papers
+### Reference
+- **[API Reference](docs/reference/api.md)** - Complete function signatures
+- **[Configuration](docs/reference/configuration.md)** - Environment variables and settings
+- **[Examples](examples/)** - Code examples and demos
 
-AgorAI bridges classical social choice theory with modern multi-agent AI systems:
+## 🎓 Key Concepts
 
-**Connections to Recent AI:**
-- **Energy-Based Models** - Democratic aggregation as energy minimization
-- **Constitutional AI** - Formal methods for collective constitutional design (Anthropic)
-- **Test-Time Compute** - Multi-round deliberation for complex decisions (OpenAI o1)
-- **MARL** - Democratic reward aggregation for multi-agent reinforcement learning
+### Aggregation Methods (14+ Available)
 
-**Key Properties:**
-- ✅ Provable fairness guarantees (anonymity, monotonicity, Pareto efficiency)
-- ✅ 14+ aggregation methods from social choice theory, welfare economics, game theory
-- ✅ Scientific evaluation with metrics (Gini coefficient, Atkinson index, social welfare)
-- ✅ Natural language explanations for interpretability
+| Category | Methods | Use When |
+|----------|---------|----------|
+| **Social Choice** | Majority, Borda, Schulze, Approval | Democratic legitimacy, ranked preferences |
+| **Welfare Economics** | Maximin, Atkinson | Fairness, inequality aversion, minority protection |
+| **Machine Learning** | Robust Median, Consensus | Outlier resistance, ensemble predictions |
+| **Game Theory** | Nash Bargaining, Veto Hybrid | Strategic settings, minority veto power |
+
+**Full list:** [Aggregation Methods Documentation](docs/core/aggregation.md#available-methods)
+
+### Why Democratic Aggregation?
+
+**Problem:** Single AI models can be biased, unfair, or make decisions that don't align with diverse human values.
+
+**Solution:** Democratic aggregation provides:
+- ✅ **Fairness:** Mechanisms with provable properties (anonymity, Pareto efficiency, minority protection)
+- ✅ **Diversity:** Incorporates multiple perspectives systematically
+- ✅ **Transparency:** Clear mathematical procedures, not black-box decisions
+- ✅ **Robustness:** Resistant to outliers and strategic manipulation
+
+## 🔬 Research & Citations
+
+AgorAI builds on decades of research in social choice theory, welfare economics, and multi-agent AI systems.
+
+**Related Research:**
+- Constitutional AI (Anthropic)
+- Multi-agent reinforcement learning (MARL)
+- Test-time compute scaling (OpenAI o1)
+- Collective decision-making in AI
 
 **Citing AgorAI:**
 ```bibtex
@@ -275,38 +152,19 @@ AgorAI bridges classical social choice theory with modern multi-agent AI systems
   author = {Schlenker, Samuel},
   title = {AgorAI: Democratic AI Through Multi-Agent Aggregation},
   year = {2025},
-  version = {0.2.0},
   url = {https://github.com/yourusername/agorai}
 }
 ```
 
 ## 🤝 Contributing
 
-Contributions for research and non-commercial purposes are welcome!
+Contributions for research and non-commercial purposes are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 **Areas where we'd love help:**
-- 🧪 Additional benchmark datasets (PRISM, voting data, constitutional preferences)
-- 📊 More visualization types (interactive plots, dashboards)
-- ✅ Property verification module (formal axiom checking)
-- 🏛️ Constitutional AI module (democratic constitution design)
-- 📖 Documentation improvements and tutorials
-- 🐛 Bug reports and feature requests
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
-
-## 🌟 Roadmap
-
-### v0.3.0 (Next Release)
-- [ ] Property verification module - Formally verify axiom satisfaction
-- [ ] Additional benchmarks - PRISM dataset, voting data
-- [ ] Interactive visualizations - Plotly/Dash dashboards
-- [ ] Framework integrations - LangChain, HuggingFace, AutoGen
-
-### v0.4.0 (Future)
-- [ ] Constitutional AI module - Democratic constitution design
-- [ ] MARL integration - Democratic reward aggregation
-- [ ] Federated learning - Democratic model aggregation
-- [ ] Advanced metrics - Shapley values, causal analysis
+- Additional benchmark datasets
+- New aggregation mechanisms
+- Documentation improvements
+- Bug reports and feature requests
 
 ## 📄 License
 
@@ -314,38 +172,14 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 Copyright (c) 2025 Samuel Schlenker
 
-This software is free to use for:
-- ✅ Academic and scientific research
-- ✅ Educational purposes
-- ✅ Personal and private use
-- ✅ Non-profit organizations
+Free for academic research, education, and non-commercial use. Commercial use requires prior written agreement.
 
-**Commercial use requires prior written agreement** with Samuel Schlenker.
+See [LICENSE](LICENSE) for full terms.
 
-**Full license terms**: The package includes a custom Research and Non-Commercial License. The complete license text is included in the `LICENSE` file within the package distribution.
+## 📧 Contact
 
-For commercial licensing inquiries, please contact Samuel Schlenker.
-
-## 🙏 Acknowledgments
-
-AgorAI builds on decades of research in social choice theory, welfare economics, and game theory. We're grateful to the researchers who developed these foundational methods:
-
-- Kenneth Arrow (Social Choice Theory)
-- Anthony Atkinson (Inequality Measurement)
-- Markus Schulze (Condorcet Methods)
-- And many others in the fields of voting theory, mechanism design, and multi-agent systems
-
-**Inspired by:**
-- Anthropic's Constitutional AI and Collective Constitutional AI
-- Stuart Russell's work on social choice for AI alignment
-- Recent advances in multi-agent systems and MARL
-
-## 📧 Contact & Support
-
-- **Issues**: [GitHub Issues](https://github.com/yourusername/agorai/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/agorai/discussions)
-- **Email**: samuel.schlenker@example.com
-- **Twitter**: [@yourusername](https://twitter.com/yourusername)
+- **Issues:** [GitHub Issues](https://github.com/yourusername/agorai/issues)
+- **Email:** samuel.schlenker@example.com
 
 ---
 
