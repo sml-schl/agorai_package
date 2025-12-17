@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "agorai"
-version = "0.1.2"
+version = "0.1.2.1"
 description = "Democratic AI: Multi-agent opinion aggregation with fairness guarantees"
 readme = "README.md"
 requires-python = ">=3.8"
@@ -57,10 +57,10 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/agorai/agorai"
-Documentation = "https://agorai.readthedocs.io"
-Repository = "https://github.com/agorai/agorai"
-"Bug Tracker" = "https://github.com/agorai/agorai/issues"
+Homepage = "https://github.com/sml-schl/agorai_package/blob/main/README.md"
+Documentation = "https://github.com/sml-schl/agorai_package/tree/main/docs"
+Repository = "https://github.com/sml-schl/agorai_package"
+"Bug Tracker" = "https://github.com/sml-schl/agorai_package/issues"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
