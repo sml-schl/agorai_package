@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="../../../Logo.png" alt="AgorAI Logo" width="300"/>
+</p>
+
 # AgorAI: Democratic AI Through Multi-Agent Aggregation
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
