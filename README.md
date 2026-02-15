@@ -150,16 +150,6 @@ AgorAI builds on decades of research in social choice theory, welfare economics,
 - Test-time compute scaling (OpenAI o1)
 - Collective decision-making in AI
 
-**Citing AgorAI:**
-```bibtex
-@software{agorai2025,
-  author = {Schlenker, Samuel},
-  title = {AgorAI: Democratic AI Through Multi-Agent Aggregation},
-  year = {2025},
-  url = {https://github.com/yourusername/agorai}
-}
-```
-
 ## 🤝 Contributing
 
 Contributions for research and non-commercial purposes are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
